@@ -62,7 +62,7 @@ func getFunctionDefiniton(position string) (*Function, error) {
 		return nil, err
 	}
 
-	match := getRegexMatch(`^(.+:) defined here as func (.+)\(.*\n$`, out)
+	match := getRegexMatch(`^(.+:) defined here as (func .+)\n$`, out)
 	if match == nil {
 		return nil, fmt.Errorf("%s is not a function", position)
 	}
