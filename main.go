@@ -62,7 +62,8 @@ func getFunctionDefiniton(position string) (*Function, error) {
 		return nil, err
 	}
 
-	match := getRegexMatch(`^(.+:) defined here as (func .+)\n$`, out)
+	definitionLine := bytes.Split(out, []byte{'\n'})[0]
+	match := getRegexMatch(`^(.+:) defined here as (func .+)$`, definitionLine)
 	if match == nil {
 		return nil, fmt.Errorf("%s is not a function", position)
 	}
