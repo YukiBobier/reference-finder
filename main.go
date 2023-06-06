@@ -36,7 +36,7 @@ func main() {
 
 	position := flag.Args()[0]
 
-	root, err := getFunctionDefiniton(position)
+	root, err := getFunctionDefinition(position)
 	checkFatal(err)
 
 	err2 := setCallerFunctions(root)
@@ -56,7 +56,7 @@ func checkFatal(err error) {
 	}
 }
 
-func getFunctionDefiniton(position string) (*Function, error) {
+func getFunctionDefinition(position string) (*Function, error) {
 	out, err := runGopls("definition", position)
 	if err != nil {
 		return nil, err
@@ -88,7 +88,7 @@ func setCallerFunctions(callee *Function) error {
 			continue
 		}
 
-		caller, err := getFunctionDefiniton(string(match[1]))
+		caller, err := getFunctionDefinition(string(match[1]))
 		if err != nil {
 			return err
 		}
