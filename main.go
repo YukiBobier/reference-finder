@@ -39,8 +39,7 @@ func main() {
 	root, err := getFunctionDefinition(position)
 	checkFatal(err)
 
-	err2 := setCallerFunctions(root)
-	checkFatal(err2)
+	setCallerFunctions(root)
 
 	if mermaid {
 		printMermaidDiagram(root)
@@ -75,10 +74,15 @@ func getFunctionDefinition(position string) (*Function, error) {
 	}, nil
 }
 
-func setCallerFunctions(callee *Function) error {
+func setCallerFunctions(callee *Function) {
 	out, err := runGopls("call_hierarchy", callee.Position)
 	if err != nil {
-		return err
+		callee.CalledBy = append(callee.CalledBy, &Function{
+			Name:     fmt.Sprintf("Error: %v", err),
+			Position: "Error",
+			CalledBy: nil,
+		})
+		return
 	}
 
 	lines := bytes.Split(out, []byte{'\n'})
@@ -90,16 +94,18 @@ func setCallerFunctions(callee *Function) error {
 
 		caller, err := getFunctionDefinition(string(match[1]))
 		if err != nil {
-			return err
+			callee.CalledBy = append(callee.CalledBy, &Function{
+				Name:     fmt.Sprintf("Error: %v", err),
+				Position: "Error",
+				CalledBy: nil,
+			})
+			return
 		}
 
 		callee.CalledBy = append(callee.CalledBy, caller)
 
-		if err := setCallerFunctions(caller); err != nil {
-			return err
-		}
+		setCallerFunctions(caller)
 	}
-	return nil
 }
 
 func runGopls(feature string, position string) ([]byte, error) {
@@ -120,6 +126,8 @@ func printMermaidDiagram(root *Function) {
 
 	visited := make(map[string]bool)
 	printCaller(root, visited)
+
+	fmt.Println("    style Error fill:#f00,stroke:#000,stroke-width:2px;")
 }
 
 func printCaller(f *Function, visited map[string]bool) {
@@ -129,7 +137,7 @@ func printCaller(f *Function, visited map[string]bool) {
 	visited[f.Position] = true
 
 	for _, caller := range f.CalledBy {
-		fmt.Printf("    %s[\"%s\"]-->%s[\"%s\"]\n", caller.Position, caller.Name, f.Position, f.Name)
+		fmt.Printf("    %s[%q]-->%s[%q]\n", caller.Position, caller.Name, f.Position, f.Name)
 
 		printCaller(caller, visited)
 	}
